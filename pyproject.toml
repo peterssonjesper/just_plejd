@@ -1,0 +1,18 @@
+[project]
+name = "just-plejd"
+version = "0.0.1"
+description = "Control Plejd devices using Python"
+authors = [{ name = "Jesper Petersson", email = "jesper@jpetersson.se" }]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+
+dependencies = [
+    "aiohttp",
+    "bleak",
+    "cryptography",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
