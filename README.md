@@ -2,7 +2,7 @@
 
 Control your Plejd devices from Python! This package lets you connect to your Plejd setup, list rooms/scenes/devices, listen to changes, and perhaps most importantly - send commands to your devices.
 
-## � Installation
+## ⚡️ Installation
 
 ```
 git clone https://github.com/peterssonjesper/just_plejd.git
@@ -10,7 +10,7 @@ cd plejd-python
 pip install .
 ```
 
-## �xample
+## 🚀 Example
 
 ```python
 import asyncio
