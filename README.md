@@ -46,6 +46,6 @@ EMAIL="your@email.com" PASSWORD="your-plejd-password" python example.py
 
 ## 🙏 Credits & Inspiration
 
-Big shoutout to [PyPlejd](https://github.com/thomasloveun/pyplejd) - a lot of this project is inspired (okay, also borrowed) from their excellent work.
+Big shoutout to [PyPlejd](https://github.com/thomasloven/pyplejd) - a lot of this project is inspired (okay, also borrowed) from their excellent work.
 
 The main innovation here is simply just a workaround to extract the Plejd device's MAC address directly from its Bluetooth advertisement. This makes it possible to run the library on macOS and iOS, where traditional access to Bluetooth MAC addresses is restricted due to system-level obfuscation.
