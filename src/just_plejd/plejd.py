@@ -36,17 +36,14 @@ class Plejd():
         self._client = None
         self._site = None
 
-    async def connect(self, timeout = 3.0, retry = True):
+    async def connect(self, timeout = 3.0):
         error = await self._establish_site_connection()
         if error:
             raise Exception(error)
 
-        attempts = 0
-        max_attempts = 3 if retry else 1
         did_connect = False
-        while not did_connect and attempts < max_attempts:
+        while not did_connect:
             did_connect = await self._connect(timeout)
-            attempts += 1
 
             if not did_connect:
                 print("Failed to connect. Retrying...")
@@ -138,7 +135,6 @@ class Plejd():
         self.gateway = await self._discover_gateway(timeout)
 
         if not self.gateway:
-            print("Failed to connect: No gateway device found")
             return False
         
         self._is_connected = False
@@ -175,7 +171,7 @@ class Plejd():
                 await self._reconnect()
 
     async def _discover_gateway(self, timeout: float):
-        print("Scanning for plejd devices...")
+        print("Scanning for plejd output devices to connect to...")
 
         devices = await BleakScanner.discover(timeout=timeout, return_adv=True)
 
@@ -184,11 +180,12 @@ class Plejd():
             return None
 
         plejd_devices: List[PlejdDevice] = []
+        gateway_candidates = set(map(lambda d: d.id, filter(lambda d: d.is_output, self._site.devices)))
         for device, adv in devices.values():
             if adv.local_name and adv.local_name.startswith("P mesh"):
                 mdata = adv.manufacturer_data.get(887)
                 mac_address = extract_mac_address(mdata)
-                if mac_address:
+                if mac_address and mac_address.replace(':', '') in gateway_candidates:
                     plejd_devices.append(PlejdDevice(device, mac_address, adv.rssi))
         
         # Sort them by signal strength

@@ -35,12 +35,17 @@ class Device:
     id: str
     address: str
     room_id: str
+    is_output: bool
 
-    def __init__(self, json, address):
+    def __init__(self, json, address: str, is_output: bool):
         self.title = json['title']
         self.id = json['deviceId']
         self.room_id = json['roomId']
         self.address = address
+        self.is_output = is_output
+    
+    def is_output(self):
+        return True
 
 @dataclass
 class Site:
@@ -65,8 +70,12 @@ class Site:
             self.scenes.append(Scene(s, json['sceneIndex'][s['sceneId']]))
 
         self.devices = []
+        output_ids = set(map(lambda s: s['deviceId'], json['outputSettings']))
         for d in json['devices']:
-            self.devices.append(Device(d, json['deviceAddress'][d['deviceId']]))
+            device_id = d['deviceId']
+            device_address = json['deviceAddress'][device_id]
+            is_output = device_id in output_ids
+            self.devices.append(Device(d, device_address, is_output))
         
 async def _get_session_token(session: ClientSession, username: str, password: str):
     resp = await session.post("/parse/login", json={"username": username, "password": password})
