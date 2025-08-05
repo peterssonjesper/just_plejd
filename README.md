@@ -6,11 +6,13 @@ Control your Plejd devices from Python! This package lets you connect to your Pl
 
 ```
 git clone https://github.com/peterssonjesper/just_plejd.git
-cd plejd-python
+cd just_plejd
 pip install .
 ```
 
 ## 🚀 Example
+
+To try to test it, put something like this in example.py:
 
 ```python
 import asyncio
@@ -34,6 +36,12 @@ async def main():
         await plejd.disconnect()
 
 asyncio.run(main())
+```
+
+### Then run it
+
+```bash
+EMAIL="your@email.com" PASSWORD="your-plejd-password" python example.py
 ```
 
 ## 🙏 Credits & Inspiration

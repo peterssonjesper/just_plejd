@@ -109,7 +109,7 @@ class Plejd():
         
         matching_site = next((site for site in sites if site.id == self._site_id), None)
         if not matching_site:
-            print(f"You provided a site ID (site_id={self._site_id}) - But I can't seem to find that site on your account.")
+            print(f"You provided a site ID ({self._site_id}) - But I can't seem to find that site on your account.")
             print('')
             self._print_site_info(sites)
             print('')
@@ -132,7 +132,7 @@ class Plejd():
     def _print_site_info(self, sites: List[http_api.Site]):
         print("These were the sites I found:")
         for site in sites:
-            print(f"> {site.title} ({len(site.devices)} device{'' if len(site.devices) == 1 else 's'}): site_id={site.id}")
+            print(f"> {site.title} ({len(site.devices)} device{'' if len(site.devices) == 1 else 's'}, site id {site.id})")
         
     async def _connect(self, timeout):
         self.gateway = await self._discover_gateway(timeout)

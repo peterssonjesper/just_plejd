@@ -1,16 +1,22 @@
 [project]
-name = "just-plejd"
+name = "just_plejd"
 version = "0.0.1"
 description = "Control Plejd devices using Python"
 authors = [{ name = "Jesper Petersson", email = "jesper@jpetersson.se" }]
 readme = "README.md"
 requires-python = ">=3.9"
-license-files = ["LICENSE"]
+license = { file = "LICENSE" }
 dependencies = [
     "aiohttp",
     "bleak",
     "cryptography",
 ]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
