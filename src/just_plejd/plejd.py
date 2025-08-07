@@ -9,11 +9,10 @@ from . import http_api
 from .packet_parser import parse_incoming_packet
 from .proto import create_auth_response, encode_payloads, encrypt_decrypt, extract_mac_address
 
-PLEJD_SERVICE = "31ba0001-6085-4726-be45-040c957391b5";
-DATA_SENDING_UUID = "31ba0004-6085-4726-be45-040c957391b5";
-DATA_RETRIEVAL_UUID = "31ba0005-6085-4726-be45-040c957391b5";
-AUTH_UUID = "31ba0009-6085-4726-be45-040c957391b5";
-PING_UUID = "31ba000a-6085-4726-be45-040c957391b5";
+DATA_SENDING_UUID = "31ba0004-6085-4726-be45-040c957391b5"
+DATA_RETRIEVAL_UUID = "31ba0005-6085-4726-be45-040c957391b5"
+AUTH_UUID = "31ba0009-6085-4726-be45-040c957391b5"
+PING_UUID = "31ba000a-6085-4726-be45-040c957391b5"
 
 class PlejdDevice():
     def __init__(self, device: BLEDevice, mac_address: str, rssi: int):
@@ -46,6 +45,7 @@ class Plejd():
             did_connect = await self._connect(timeout)
 
             if not did_connect:
+                await self.disconnect()
                 print("Failed to connect. Retrying...")
     
     async def disconnect(self):
@@ -54,8 +54,11 @@ class Plejd():
         self._is_connected = False
 
         try:
-            retrieval_char = self._get_characteristic(DATA_RETRIEVAL_UUID)
-            await self._client.stop_notify(retrieval_char)
+            await self._client.stop_notify(DATA_RETRIEVAL_UUID)
+        except:
+            pass
+
+        try:
             await self._client.disconnect()
         except Exception as e:
             print(f"Failed disconnecting... {e}")
@@ -64,8 +67,7 @@ class Plejd():
         encoded_payloads = encode_payloads(self._crypto_key, self.gateway.mac_address, payloads)
         for payload in encoded_payloads:
             try:
-                data_char = self._get_characteristic(DATA_SENDING_UUID)
-                await self._client.write_gatt_char(data_char, bytearray(payload), response=True)
+                await self._client.write_gatt_char(DATA_SENDING_UUID, bytearray(payload))
             except Exception as e:
                 if str(e) == "In Progress":
                     asyncio.get_event_loop().call_later(1, lambda: asyncio.create_task(self.run(payloads)))
@@ -150,8 +152,7 @@ class Plejd():
             self._is_connected = False
             return False
 
-        retrieval_char = self._get_characteristic(DATA_RETRIEVAL_UUID)
-        await self._client.start_notify(retrieval_char, self._received_data)
+        await self._client.start_notify(DATA_RETRIEVAL_UUID, self._received_data)
 
         return True
     
@@ -180,7 +181,7 @@ class Plejd():
             return None
 
         plejd_devices: List[PlejdDevice] = []
-        gateway_candidates = set(map(lambda d: d.id, filter(lambda d: d.is_output, self._site.devices)))
+        gateway_candidates = set(map(lambda d: d.id, filter(lambda d: d.has_power(), self._site.devices)))
         for device, adv in devices.values():
             if adv.local_name and adv.local_name.startswith("P mesh"):
                 mdata = adv.manufacturer_data.get(887)
@@ -200,19 +201,18 @@ class Plejd():
 
     async def _authenticate(self):
         print('Authenticating...')
-        auth_char = self._get_characteristic(AUTH_UUID)
-        await self._client.write_gatt_char(auth_char, b'\x00', response=True)
-        challenge = await self._client.read_gatt_char(auth_char)
+        await self._client.write_gatt_char(AUTH_UUID, b'\x00')
+        await asyncio.sleep(1) # Wait for the challenge to be generated. Sure there's a better way to do this, but can't wait for the ACK (write-without-response)
+        challenge = await self._client.read_gatt_char(AUTH_UUID)
         auth_response = create_auth_response(challenge, self._crypto_key)
-        await self._client.write_gatt_char(auth_char, auth_response, response=True)
+        await self._client.write_gatt_char(AUTH_UUID, auth_response)
 
         return await self._ping()
 
     async def _ping(self):
         ping = bytearray(os.urandom(1))
-        ping_char = self._get_characteristic(PING_UUID)
-        await self._client.write_gatt_char(ping_char, ping)
-        pong = await self._client.read_gatt_char(ping_char)
+        await self._client.write_gatt_char(PING_UUID, ping)
+        pong = await self._client.read_gatt_char(PING_UUID)
         return ((ping[0] + 1) & 0xFF) == pong[0]
 
     async def _received_data(self, _char, data: bytearray):
@@ -223,13 +223,6 @@ class Plejd():
         for cb in self._on_change_callbacks:
             cb(event)
 
-    def _get_characteristic(self, uuid: str):
-        for service in self._client.services:
-            for char in service.characteristics:
-                if char.uuid == uuid:
-                    return char
-        return None
-    
     def _get_device_name(self, mac_address: str):
         if not self._site:
             return mac_address
