@@ -46,7 +46,6 @@ class Plejd():
 
             if not did_connect:
                 await self.disconnect()
-                print("Failed to connect. Retrying...")
     
     async def disconnect(self):
         if self._is_connected or not self._client or not self._client.is_connected:
@@ -141,6 +140,7 @@ class Plejd():
         
         self._is_connected = False
         self._client = BleakClient(self.gateway.device.address)
+        print("Connecting...")
         await self._client.connect()
         self._is_connected = self._client.is_connected
 
@@ -148,11 +148,12 @@ class Plejd():
         if did_auth:
             print("Authed successfully!")
         else:
-            print("Failed to connect: Could not authenticate")
+            print("Failed to connect: Could not authenticate. Retrying...")
             self._is_connected = False
             return False
 
         await self._client.start_notify(DATA_RETRIEVAL_UUID, self._received_data)
+        print("Ready!")
 
         return True
     
