@@ -1,6 +1,8 @@
+from enum import IntFlag
 from typing import List
 from aiohttp import ClientSession
 from dataclasses import dataclass
+from json import dumps
 
 API_APP_ID = "zHtVqXt8k4yFyk2QGmgp48D9xZr2G94xWYnF4dak"
 API_BASE_URL = "https://cloud.plejd.com"
@@ -9,6 +11,15 @@ headers = {
     "X-Parse-Application-Id": API_APP_ID,
     "Content-Type": "application/json",
 }
+
+class PlejdTraits(IntFlag):
+    POWER = 0x8
+    TEMP = 0x4
+    DIM = 0x2
+    GROUP = 0x1
+
+    COVER = 0x10
+    TILT = 0x40
 
 @dataclass
 class Scene:
@@ -35,17 +46,17 @@ class Device:
     id: str
     address: str
     room_id: str
-    is_output: bool
+    traits: PlejdTraits
 
-    def __init__(self, json, address: str, is_output: bool):
+    def __init__(self, json, address: str):
         self.title = json['title']
         self.id = json['deviceId']
         self.room_id = json['roomId']
+        self.traits = PlejdTraits(json['traits'])
         self.address = address
-        self.is_output = is_output
     
-    def is_output(self):
-        return True
+    def has_power(self):
+        return PlejdTraits.POWER in self.traits
 
 @dataclass
 class Site:
@@ -70,12 +81,10 @@ class Site:
             self.scenes.append(Scene(s, json['sceneIndex'][s['sceneId']]))
 
         self.devices = []
-        output_ids = set(map(lambda s: s['deviceId'], json['outputSettings']))
         for d in json['devices']:
             device_id = d['deviceId']
             device_address = json['deviceAddress'][device_id]
-            is_output = device_id in output_ids
-            self.devices.append(Device(d, device_address, is_output))
+            self.devices.append(Device(d, device_address))
         
 async def _get_session_token(session: ClientSession, username: str, password: str):
     resp = await session.post("/parse/login", json={"username": username, "password": password})
