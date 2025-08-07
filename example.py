@@ -17,12 +17,18 @@ async def main():
         exit(1)
 
     plejd = Plejd(email=email, password=password, site_id=site_id)
+
+    # Listen to events coming in on the plejd mesh network
+    unsubscribe = plejd.on_change(print)
+
+    # Connect to closest connectible Plejd device
     await plejd.connect()
 
-    await plejd.run(commands.turn_on(39))  # Replace 39 with your device address
-    #await plejd.run(commands.turn_off(39)) # 39 being the device address
-    #await plejd.run(commands.dim(39, 182)) # 182 being a number between 0 (off) to 255 (on)
-    #await plejd.run(commands.activate_scene(1)) # 1 being the scene address
+    # Run comands to control lights, activates scenes, etc.
+    # await plejd.run(commands.turn_on(39))  # Replace 39 with your device address
+    # await plejd.run(commands.turn_off(39))
+    # await plejd.run(commands.dim(39, 182)) # 182 being a number between 0 (off) to 255 (on)
+    # await plejd.run(commands.activate_scene(1)) # 1 being the scene address
 
     try:
         # Wait indefinitely for on_change events
@@ -30,6 +36,7 @@ async def main():
     except asyncio.CancelledError:
         print("Exiting...")
     finally:
+        unsubscribe()
         await plejd.disconnect()
 
 asyncio.run(main())
